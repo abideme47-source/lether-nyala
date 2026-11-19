@@ -1,0 +1,42 @@
+'use client'
+
+import { motion, useReducedMotion } from 'framer-motion'
+import Image from 'next/image'
+import Link from 'next/link'
+import { products } from '@/data/products'
+
+export function AboutProducts() {
+  const reducedMotion = useReducedMotion() === true
+
+  return (
+    <section aria-labelledby="about-products-title" className="about-products">
+      <div className="about-products-inner">
+        <h2 id="about-products-title">What we make</h2>
+        <div className="about-products-grid">
+          {products.map(({ name, image, alt }, index) => (
+            <motion.div
+              className="about-product-shell"
+              initial={reducedMotion ? false : { opacity: 0, y: 24 }}
+              key={name}
+              transition={{ delay: reducedMotion ? 0 : index * 0.08, duration: reducedMotion ? 0 : 0.55, ease: 'easeOut' }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+            >
+              <Link className="about-product-card" href="/products">
+                <Image
+                  alt={alt}
+                  className="about-product-image"
+                  fill
+                  sizes="(max-width: 767px) 50vw, 34vw"
+                  src={image}
+                />
+                <span aria-hidden="true" className="about-product-shade" />
+                <span className="about-product-name">{name}</span>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
