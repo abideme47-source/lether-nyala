@@ -1,9 +1,10 @@
 'use client'
 
 import { motion, useReducedMotion } from 'framer-motion'
-import Image from 'next/image'
 import Link from 'next/link'
+import { useRef } from 'react'
 import { products } from '@/data/products'
+import { UnsplashImage } from '@/components/site/unsplash-image'
 
 export function AboutProducts() {
   const reducedMotion = useReducedMotion() === true
@@ -23,10 +24,11 @@ export function AboutProducts() {
               viewport={{ once: true, amount: 0.2 }}
             >
               <Link className="about-product-card" href="/products">
-                <Image
+                <UnsplashImage
                   alt={alt}
                   className="about-product-image"
                   fill
+                  loading="lazy"
                   sizes="(max-width: 767px) 50vw, 34vw"
                   src={image}
                 />

@@ -1,17 +1,17 @@
 'use client'
 
 import { motion, useInView, useReducedMotion } from 'framer-motion'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useRef } from 'react'
 import { products } from '@/data/products'
+import { UnsplashImage } from '@/components/site/unsplash-image'
 
 function ProductPanel({ title, index, reduceMotion }: { title: string; index: number; reduceMotion: boolean }) {
 
   return (
     <figure className={`product-panel product-panel-${index + 1}`} style={{ zIndex: index + 1 }}>
       <div className="panel-media">
-        <Image className="panel-image" src={products[index].image} alt={products[index].alt} fill sizes="100vw" priority={index === 0} />
+        <UnsplashImage className="panel-image" src={products[index].image} alt={products[index].alt} fill sizes="100vw" loading="lazy" />
       </div>
       <div className="panel-shade" aria-hidden="true" />
       <motion.figcaption
@@ -35,7 +35,7 @@ export function ProductMosaic() {
   const isInView = useInView(sectionRef, { amount: 0.08 })
 
   return (
-    <section className="products-section" ref={sectionRef} aria-labelledby="products-title">
+    <section className="products-section" ref={sectionRef} aria-labelledby="products-title" id="products">
       <h2 className={`products-sticky-title${isInView ? ' is-visible' : ''}`} id="products-title">Our Products</h2>
       <div className="product-panels">
         {products.map(({ name }, index) => (

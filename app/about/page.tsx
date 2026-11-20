@@ -1,13 +1,15 @@
-import type { Metadata } from 'next'
+import dynamic from 'next/dynamic'
 import { AboutNavigation } from '@/components/site/about-navigation'
-import { AboutStory } from '@/components/site/about-story'
 import { Footer } from '@/components/site/footer'
 import { MobileCallBar } from '@/components/site/mobile-call-bar'
+import { pageMetadata } from '@/lib/page-metadata'
 
-export const metadata: Metadata = {
-  title: 'About Nyala | Nyala Shoe & Leather Products Factory',
-  description: 'Learn about Nyala Shoe & Leather Products Factory, proudly making quality leather products in Addis Ababa, Ethiopia.',
-}
+const AboutStory = dynamic(() => import('@/components/site/about-story').then((module) => module.AboutStory))
+
+export const metadata = pageMetadata(
+  'About Us | Nyala Shoe & Leather Products Factory',
+  'Meet Nyala, a leather factory in Addis Ababa making shoes, boots, bags, belts and wallets.',
+)
 
 export default function AboutPage() {
   return (

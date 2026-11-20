@@ -45,12 +45,11 @@ export function AboutStory() {
     offset: ['start start', 'end end'],
   })
 
-  const photoWidth = useTransform(scrollYProgress, [0, 0.3], [metrics?.startWidth ?? 0, metrics?.fullWidth ?? 0])
-  const photoHeight = useTransform(scrollYProgress, [0, 0.3], [metrics?.startHeight ?? 0, metrics?.fullHeight ?? 0])
-  const photoRadius = useTransform(scrollYProgress, [0, 0.3], [16, 0])
+  const photoScaleX = useTransform(scrollYProgress, [0, 0.3], [metrics?.startWidth ? metrics.startWidth / (metrics.fullWidth || 1) : 0.3, 1])
+  const photoScaleY = useTransform(scrollYProgress, [0, 0.3], [metrics?.startHeight ? metrics.startHeight / (metrics.fullHeight || 1) : 0.24, 1])
   const [part2ButtonsVisible, setPart2ButtonsVisible] = useState(false)
   const imageScale = useTransform(scrollYProgress, [0, 0.25, 0.4], [1.15, 1.05, 1.05])
-  const imageBlur = useTransform(scrollYProgress, [0.25, 0.4], ['blur(0px)', 'blur(5px)'])
+  const blurredCopyOpacity = useTransform(scrollYProgress, [0.25, 0.4], [0, 1])
   const overlayOpacity = useTransform(scrollYProgress, [0, 0.3], [0.12, 0.45])
   const statementOpacity = useTransform(scrollYProgress, [0.3, 0.32, 0.45, 0.55], [0, 1, 1, 0])
   const part1Opacity = useTransform(scrollYProgress, [0.55, 0.58, 0.65, 0.75], [0, 1, 1, 0])
@@ -105,9 +104,9 @@ export function AboutStory() {
     }
   })
 
-  const frameStyle = reducedMotion || !metrics
+  const frameStyle = reducedMotion
     ? undefined
-    : { width: photoWidth, height: photoHeight, borderRadius: photoRadius }
+    : { scaleX: photoScaleX, scaleY: photoScaleY }
 
   return (
     <section
@@ -118,15 +117,19 @@ export function AboutStory() {
       <div className="about-story-pin" ref={pinRef}>
         <div className="about-photo-layer">
           <motion.div className="about-photo-frame" style={frameStyle}>
-            <motion.div className="about-photo-image" style={reducedMotion ? undefined : { scale: imageScale, filter: imageBlur }}>
+            <motion.div className="about-photo-image" style={reducedMotion ? undefined : { scale: imageScale }}>
               <Image
                 alt="Leather craftsman hand-stitching a shoe in a workshop"
                 className="about-photo"
                 fill
-                priority
+                loading="lazy"
+                unoptimized={false}
                 sizes="100vw"
                 src={heroImage.src}
               />
+            </motion.div>
+            <motion.div aria-hidden="true" className="about-photo-blurred-copy" style={reducedMotion ? undefined : { opacity: blurredCopyOpacity }}>
+              <Image alt="" className="about-photo" fill loading="lazy" sizes="100vw" src={heroImage.src} unoptimized={false} />
             </motion.div>
             <motion.div
               aria-hidden="true"

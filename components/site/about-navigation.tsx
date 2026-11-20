@@ -2,6 +2,7 @@
 
 import { Menu, X } from 'lucide-react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
 const navigationLinks = [
@@ -12,6 +13,7 @@ const navigationLinks = [
 ]
 
 export function AboutNavigation() {
+  const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLElement>(null)
@@ -60,8 +62,8 @@ export function AboutNavigation() {
         <nav className="about-nav-desktop" aria-label="Primary navigation">
           {navigationLinks.map(({ label, href }) => (
             <Link
-              aria-current={href === '/about' ? 'page' : undefined}
-              className={`about-nav-link${href === '/about' ? ' is-current' : ''}`}
+              aria-current={href === pathname ? 'page' : undefined}
+              className={`about-nav-link${href === pathname ? ' is-current' : ''}`}
               href={href}
               key={href}
             >
@@ -101,8 +103,8 @@ export function AboutNavigation() {
         <div className="about-mobile-links">
           {navigationLinks.map(({ label, href }) => (
             <Link
-              aria-current={href === '/about' ? 'page' : undefined}
-              className={`about-mobile-link${href === '/about' ? ' is-current' : ''}`}
+              aria-current={href === pathname ? 'page' : undefined}
+              className={`about-mobile-link${href === pathname ? ' is-current' : ''}`}
               href={href}
               key={href}
               onClick={closeMenu}

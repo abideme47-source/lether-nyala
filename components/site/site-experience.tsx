@@ -4,21 +4,24 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { usePathname } from 'next/navigation'
 import { ReactLenis } from 'lenis/react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { TopScrollProgress } from '@/components/site/scroll-indicators'
 
 const introDuration = 700
 const brandLetters = ['N', 'Y', 'A', 'L', 'A']
 
 export function SiteExperience({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  const skipIntro = pathname === '/about'
+  const skipIntro = pathname === '/about' || pathname === '/products'
   const [reduceMotion, setReduceMotion] = useState(false)
   const [showIntro, setShowIntro] = useState(!skipIntro)
+  const [introActive, setIntroActive] = useState(!skipIntro)
   const initialized = useRef(false)
 
   useEffect(() => {
     if (skipIntro) {
       setReduceMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches)
       setShowIntro(false)
+      setIntroActive(false)
       document.body.style.overflow = ''
       return
     }
@@ -40,6 +43,7 @@ export function SiteExperience({ children }: { children: ReactNode }) {
 
     if (prefersReducedMotion || alreadySeen) {
       setShowIntro(false)
+      if (prefersReducedMotion) setIntroActive(false)
       return
     }
 
@@ -65,8 +69,12 @@ export function SiteExperience({ children }: { children: ReactNode }) {
   return (
     <>
       {content}
+      {(pathname === '/' || pathname === '/about' || pathname === '/products') && <TopScrollProgress hidden={introActive} />}
       {!skipIntro && (
-        <AnimatePresence onExitComplete={() => { document.body.style.overflow = '' }}>
+          <AnimatePresence onExitComplete={() => {
+            document.body.style.overflow = ''
+            setIntroActive(false)
+          }}>
           {showIntro && !reduceMotion && (
             <motion.div
               className="intro-loader"
