@@ -1,99 +1,147 @@
 'use client'
 
-import { motion, useMotionValueEvent, useReducedMotion, useScroll } from 'framer-motion'
+import Image from 'next/image'
+import { AnimatePresence, motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform, type MotionValue } from 'framer-motion'
+import { ArrowRight } from 'lucide-react'
 import { useLenis } from 'lenis/react'
-import { useRef, useState } from 'react'
+import { useRef, useState, type TouchEvent } from 'react'
 import { products } from '@/data/products'
-import { UnsplashImage } from '@/components/site/unsplash-image'
 
-const phoneLink = 'tel:+251911606155'
+type Product = (typeof products)[number]
 
-function CallButton({ label = 'Call to order' }: { label?: string }) {
-  return (
-    <a className="products-call-button" href={phoneLink}>
-      {label}
-    </a>
-  )
-}
-
-function ProductCard({ product, index }: { product: (typeof products)[number]; index: number }) {
-  const reducedMotion = useReducedMotion() === true
+function ProductPanel({
+  product,
+  index,
+  activeIndex,
+  photoIndex,
+  progress,
+  reducedMotion,
+}: {
+  product: Product
+  index: number
+  activeIndex: number
+  photoIndex: number
+  progress: MotionValue<number>
+  reducedMotion: boolean
+}) {
+  const segmentStart = index / products.length
+  const segmentEnd = (index + 1) / products.length
+  const liftStart = segmentStart + (segmentEnd - segmentStart) * 0.65
+  const isActive = index === activeIndex
+  const isNext = index === activeIndex + 1
+  const isMounted = isActive || isNext || (activeIndex === 0 && index < 2)
+  const y = useTransform(progress, [liftStart, segmentEnd], ['0%', '-100%'])
+  const photoScaleStart = segmentStart === 0 ? segmentEnd * 0.35 : segmentStart - (1 / products.length) * 0.35
+  const photoScale = useTransform(progress, [photoScaleStart, segmentStart === 0 ? photoScaleStart + 0.01 : segmentStart], [1.08, 1])
+  const titleY = useTransform(progress, [segmentStart + 0.1 / products.length, segmentStart + 0.4 / products.length], [0, -26])
+  const descriptionOpacity = useTransform(progress, [segmentStart + 0.1 / products.length, segmentStart + 0.4 / products.length], [0, 1])
+  const descriptionY = useTransform(progress, [segmentStart + 0.1 / products.length, segmentStart + 0.4 / products.length], [12, 0])
 
   return (
     <motion.article
-      className="products-mobile-card"
-      initial={reducedMotion ? false : { opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: reducedMotion ? 0 : 0.55, ease: 'easeOut' }}
-      viewport={{ once: true, amount: 0.15 }}
+      aria-hidden={!isActive}
+      className={`products-panel${isActive ? ' is-active' : ''}`}
+      inert={!isActive}
+      style={reducedMotion ? undefined : { y: index === products.length - 1 ? 0 : y, zIndex: products.length - index }}
     >
-      <UnsplashImage
-        alt={product.alt}
-        className="products-mobile-image"
-        fill
-        loading="lazy"
-        sizes="(max-width: 767px) calc(100vw - 40px), 1px"
-        src={product.image}
-      />
-      <div aria-hidden="true" className="products-card-shade" />
-      <div className="products-mobile-copy">
-        <span className="products-tag">{product.tag}</span>
-        <h2>{product.name}</h2>
-        <p>{product.line}</p>
-        <CallButton />
+      <div className="products-panel-image-wrap">
+        {isMounted && (
+          <AnimatePresence initial={false} mode="sync">
+            <motion.div
+              animate={isActive ? { opacity: 1, scale: 1 } : { opacity: 1 }}
+              className="products-panel-image-layer"
+              exit={{ opacity: 0, scale: 1.02 }}
+              initial={{ opacity: 0, scale: 1.04 }}
+              key={product.images[photoIndex].src}
+              style={isActive ? undefined : { scale: photoScale }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+            >
+              <Image
+                alt={product.images[photoIndex].alt}
+                className="products-panel-image"
+                fill
+                loading={index < 2 ? 'eager' : 'lazy'}
+                sizes="100vw"
+                src={product.images[photoIndex].src}
+              />
+            </motion.div>
+          </AnimatePresence>
+        )}
       </div>
-      <span className="sr-only">Product {index + 1} of {products.length}</span>
+      <div aria-hidden="true" className="products-panel-shade" />
+      <div className="products-photo-gradient" />
+      <div className="products-panel-copy">
+        <span className="products-tag">{product.tag}</span>
+        <motion.h2 style={reducedMotion ? undefined : { y: titleY }}>{product.name}</motion.h2>
+        <motion.p style={reducedMotion ? undefined : { opacity: descriptionOpacity, y: descriptionY }}>{product.line}</motion.p>
+      </div>
     </motion.article>
   )
 }
 
 export function ProductsShowcase() {
   const sectionRef = useRef<HTMLElement>(null)
-  const activeIndexRef = useRef(0)
+  const activeRef = useRef(0)
+  const touchStartX = useRef<number | null>(null)
+  const pressedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [activeIndex, setActiveIndex] = useState(0)
-  const [previousIndex, setPreviousIndex] = useState<number | null>(null)
+  const [photoIndexes, setPhotoIndexes] = useState<number[]>(products.map(() => 0))
+  const [pressed, setPressed] = useState(false)
   const reducedMotion = useReducedMotion() === true
   const lenis = useLenis()
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ['start start', 'end end'],
-  })
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end end'] })
 
   useMotionValueEvent(scrollYProgress, 'change', (progress) => {
-    if (reducedMotion || window.matchMedia('(max-width: 767px)').matches) return
+    if (reducedMotion) return
     const nextIndex = Math.min(products.length - 1, Math.floor(progress * products.length))
-    if (nextIndex === activeIndexRef.current) return
-    const outgoingIndex = activeIndexRef.current
-    setPreviousIndex(outgoingIndex)
-    activeIndexRef.current = nextIndex
-    setActiveIndex(nextIndex)
-    window.setTimeout(() => setPreviousIndex((current) => current === outgoingIndex ? null : current), 500)
+    if (nextIndex !== activeRef.current) {
+      activeRef.current = nextIndex
+      setActiveIndex(nextIndex)
+    }
   })
 
   const scrollToProduct = (index: number) => {
     const section = sectionRef.current
     if (!section) return
-    const progress = (index + 0.08) / products.length
+    const progress = (index + 0.12) / products.length
     const target = section.getBoundingClientRect().top + window.scrollY + progress * (section.offsetHeight - window.innerHeight)
-    if (reducedMotion) {
-      window.scrollTo({ top: target, behavior: 'auto' })
-    } else if (lenis) {
-      lenis.scrollTo(target, { duration: 1.15 })
-    } else {
-      window.scrollTo({ top: target, behavior: 'smooth' })
-    }
+    if (reducedMotion) window.scrollTo({ top: target, behavior: 'auto' })
+    else if (lenis) lenis.scrollTo(target, { duration: 1.15 })
+    else window.scrollTo({ top: target, behavior: 'smooth' })
   }
 
-  const visibleImages = [...new Set([previousIndex, activeIndex].filter((index): index is number => index !== null))]
+  const advancePhoto = (index = activeIndex) => {
+    setPhotoIndexes((current) => current.map((photoIndex, productIndex) =>
+      productIndex === index ? (photoIndex + 1) % products[index].images.length : photoIndex,
+    ))
+    setPressed(true)
+    if (pressedTimer.current) clearTimeout(pressedTimer.current)
+    pressedTimer.current = setTimeout(() => setPressed(false), 220)
+  }
+
+  const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    touchStartX.current = event.touches[0]?.clientX ?? null
+  }
+
+  const handleTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    const start = touchStartX.current
+    const end = event.changedTouches[0]?.clientX
+    if (start !== null && end !== undefined && Math.abs(end - start) > 42) advancePhoto()
+    touchStartX.current = null
+  }
 
   return (
     <>
-      <section className="products-showcase" ref={sectionRef} aria-label="Explore our products">
+      <section
+        aria-label="Explore our products"
+        className={`products-showcase${reducedMotion ? ' is-reduced-motion' : ''}`}
+        ref={sectionRef}
+      >
         <div className="products-pin">
           <nav aria-label="Choose a product" className="products-name-list">
             {products.map((product, index) => (
               <button
-                aria-pressed={activeIndex === index}
+                aria-current={activeIndex === index ? 'step' : undefined}
                 className={`products-name-button${activeIndex === index ? ' is-active' : ''}`}
                 key={product.name}
                 onClick={() => scrollToProduct(index)}
@@ -103,48 +151,75 @@ export function ProductsShowcase() {
               </button>
             ))}
           </nav>
-          <div className="products-photo-stage">
-            {visibleImages.map((index) => {
-              const product = products[index]
-              const isActive = index === activeIndex
-              return (
-                <div
-                  aria-hidden={!isActive}
-                  className={`products-photo-layer${isActive ? ' is-active' : ''}`}
-                  key={product.name}
-                >
-                  <UnsplashImage
-                    alt={product.alt}
-                    className="products-photo"
-                    fill
-                    loading="lazy"
-                    sizes="(max-width: 767px) 1px, 60vw"
-                    src={product.image}
-                  />
-                  <div aria-hidden="true" className="products-photo-shade" />
-                  {isActive && (
-                    <motion.div
-                      animate={{ opacity: 1, y: 0 }}
-                      className="products-photo-copy"
-                      initial={reducedMotion ? false : { opacity: 0, y: 12 }}
-                      key={product.name}
-                      transition={{ duration: reducedMotion ? 0 : 0.45, ease: 'easeOut' }}
-                    >
-                      <span className="products-tag">{product.tag}</span>
-                      <h2>{product.name}</h2>
-                      <p>{product.line}</p>
-                      <CallButton />
-                    </motion.div>
-                  )}
-                </div>
-              )
-            })}
+          <div
+            aria-label={`Product photo: ${products[activeIndex].name}`}
+            className="products-photo-stage"
+            role="group"
+            onTouchEnd={handleTouchEnd}
+            onTouchStart={handleTouchStart}
+          >
+            <span className="products-photo-count" aria-live="polite">{photoIndexes[activeIndex] + 1}/3</span>
+            <span className="products-mobile-counter" aria-live="polite">
+              {String(activeIndex + 1).padStart(2, '0')} / {String(products.length).padStart(2, '0')}
+            </span>
+            <button
+              aria-label={`Show next photo of ${products[activeIndex].name}`}
+              className={`products-next-button${pressed ? ' is-pressed' : ''}`}
+              onClick={() => advancePhoto()}
+              type="button"
+            >
+              <ArrowRight aria-hidden="true" size={19} strokeWidth={1.5} />
+            </button>
+            {products.map((product, index) => (
+              <ProductPanel
+                activeIndex={activeIndex}
+                index={index}
+                key={product.name}
+                photoIndex={photoIndexes[index]}
+                product={product}
+                progress={scrollYProgress}
+                reducedMotion={reducedMotion}
+              />
+            ))}
           </div>
         </div>
       </section>
-      <section aria-label="All products" className="products-mobile-list">
-        {products.map((product, index) => <ProductCard index={index} key={product.name} product={product} />)}
-      </section>
+      {reducedMotion && (
+        <section className="products-reduced-list" aria-label="All products">
+          {products.map((product) => (
+            <article className="products-reduced-card" key={product.name}>
+              <Image alt={product.images[0].alt} fill sizes="100vw" src={product.images[0].src} />
+              <div className="products-reduced-copy">
+                <span className="products-tag">{product.tag}</span>
+                <h2>{product.name}</h2>
+                <p>{product.line}</p>
+              </div>
+            </article>
+          ))}
+        </section>
+      )}
     </>
+  )
+}
+
+export function ProductsContact() {
+  const reducedMotion = useReducedMotion() === true
+
+  return (
+    <section aria-label="Contact Nyala" className="products-contact">
+      <div className="products-contact-content">
+        <motion.a
+          className="products-contact-button"
+          href="/contact"
+          initial={reducedMotion ? false : { opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          transition={{ duration: reducedMotion ? 0 : 0.55, ease: 'easeOut' }}
+          viewport={{ once: true, amount: 0.5 }}
+        >
+          Contact Us
+        </motion.a>
+        <a className="products-contact-phone" href="tel:+251911606155">Call now: +251911606155</a>
+      </div>
+    </section>
   )
 }

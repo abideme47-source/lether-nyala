@@ -1,10 +1,9 @@
 'use client'
 
+import Image from 'next/image'
 import { motion, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
-import { useRef } from 'react'
 import { products } from '@/data/products'
-import { UnsplashImage } from '@/components/site/unsplash-image'
 
 export function AboutProducts() {
   const reducedMotion = useReducedMotion() === true
@@ -14,7 +13,7 @@ export function AboutProducts() {
       <div className="about-products-inner">
         <h2 id="about-products-title">What we make</h2>
         <div className="about-products-grid">
-          {products.map(({ name, image, alt }, index) => (
+          {products.map(({ name, images }, index) => (
             <motion.div
               className="about-product-shell"
               initial={reducedMotion ? false : { opacity: 0, y: 24 }}
@@ -24,13 +23,13 @@ export function AboutProducts() {
               viewport={{ once: true, amount: 0.2 }}
             >
               <Link className="about-product-card" href="/products">
-                <UnsplashImage
-                  alt={alt}
+                <Image
+                  alt={images[0].alt}
                   className="about-product-image"
                   fill
                   loading="lazy"
                   sizes="(max-width: 767px) 50vw, 34vw"
-                  src={image}
+                  src={images[0].src}
                 />
                 <span aria-hidden="true" className="about-product-shade" />
                 <span className="about-product-name">{name}</span>

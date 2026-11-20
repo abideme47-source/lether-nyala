@@ -1,17 +1,17 @@
 'use client'
 
+import Image from 'next/image'
 import { motion, useInView, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
 import { useRef } from 'react'
 import { products } from '@/data/products'
-import { UnsplashImage } from '@/components/site/unsplash-image'
 
 function ProductPanel({ title, index, reduceMotion }: { title: string; index: number; reduceMotion: boolean }) {
 
   return (
     <figure className={`product-panel product-panel-${index + 1}`} style={{ zIndex: index + 1 }}>
       <div className="panel-media">
-        <UnsplashImage className="panel-image" src={products[index].image} alt={products[index].alt} fill sizes="100vw" loading="lazy" />
+        <Image className="panel-image" src={products[index].images[0].src} alt={products[index].images[0].alt} fill sizes="100vw" loading="lazy" />
       </div>
       <div className="panel-shade" aria-hidden="true" />
       <motion.figcaption
