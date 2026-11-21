@@ -1,8 +1,8 @@
 export const products = [
   {
     name: 'Shoes',
-    tag: 'Footwear',
-    line: 'Strong leather shoes for every day.',
+    slug: 'shoes',
+    line: 'Strong leather shoes made in Addis Ababa for work, school and everyday life. Each pair is cut and stitched with care to last. Call us to order yours.',
     images: [
       { src: '/products/shoes-01.webp', alt: 'Brown leather derby shoes' },
       { src: '/products/shoes-02.webp', alt: 'Oxblood leather oxford shoe' },
@@ -11,8 +11,8 @@ export const products = [
   },
   {
     name: 'Bags',
-    tag: 'Leather goods',
-    line: 'Leather bags made to carry your day.',
+    slug: 'bags',
+    line: 'Strong leather bags made in Addis Ababa to carry your day. Stitched with care for work, school and travel. Call us to order yours.',
     images: [
       { src: '/products/bags-01.webp', alt: 'Cognac leather satchel' },
       { src: '/products/bags-02.webp', alt: 'Dark leather messenger bag' },
@@ -21,8 +21,8 @@ export const products = [
   },
   {
     name: 'Boots',
-    tag: 'Footwear',
-    line: 'Tough leather boots for any road.',
+    slug: 'boots',
+    line: 'Tough leather boots made in Addis Ababa for any road. Strong leather and careful stitching keep them steady day after day. Call us to order yours.',
     images: [
       { src: '/products/boots-01.webp', alt: 'Dark brown leather lace-up boots' },
       { src: '/products/boots-02.webp', alt: 'Black leather Chelsea boot' },
@@ -31,8 +31,8 @@ export const products = [
   },
   {
     name: 'Belts',
-    tag: 'Leather goods',
-    line: 'Classic leather belts with strong stitching.',
+    slug: 'belts',
+    line: 'Classic leather belts made in Addis Ababa. Strong leather and firm stitching give them a clean look that lasts for years. Call us to order yours.',
     images: [
       { src: '/products/belts-01.webp', alt: 'Coiled brown leather belt with buckle' },
       { src: '/products/belts-02.webp', alt: 'Black leather belt and buckle' },
@@ -41,8 +41,8 @@ export const products = [
   },
   {
     name: 'Wallets',
-    tag: 'Leather goods',
-    line: 'Slim leather wallets that last.',
+    slug: 'wallets',
+    line: 'Slim leather wallets made in Addis Ababa to keep your cards and cash close. Carefully cut and stitched to last. Call us to order yours.',
     images: [
       { src: '/products/wallets-01.webp', alt: 'Closed cognac leather wallet' },
       { src: '/products/wallets-02.webp', alt: 'Open dark leather bifold wallet' },
@@ -51,8 +51,8 @@ export const products = [
   },
   {
     name: 'Safety Shoes',
-    tag: 'Footwear',
-    line: 'Strong shoes for work and the job site.',
+    slug: 'safety-shoes',
+    line: 'Strong leather shoes made in Addis Ababa for work and the job site. Made to last through long working days. Call us to order yours.',
     images: [
       { src: '/products/safety-shoes-01.webp', alt: 'Black leather steel-toe safety boots' },
       { src: '/products/safety-shoes-02.webp', alt: 'Brown leather steel-toe work boots' },

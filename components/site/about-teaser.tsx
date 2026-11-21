@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRef, useState } from 'react'
 import { heroImage } from '@/lib/site-images'
+import { useImagePreload } from '@/lib/use-image-preload'
 
 const headlineLines = ['A factory with', 'leather in its heart']
 
@@ -28,6 +29,7 @@ function HeadlineLine({ index, progress, reducedMotion }: {
 
 export function AboutTeaser() {
   const sectionRef = useRef<HTMLElement>(null)
+  useImagePreload(sectionRef, heroImage.src)
   const reducedMotion = useReducedMotion() === true
   const [buttonVisible, setButtonVisible] = useState(false)
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start end', 'end end'] })
@@ -64,7 +66,7 @@ export function AboutTeaser() {
                 alt="Leather craftsman hand-stitching a shoe in a workshop"
                 fill
                 loading="lazy"
-                unoptimized={false}
+                decoding="async"
                 sizes="(max-width: 767px) calc(100vw - 40px), 450px"
                 src={heroImage.src}
               />

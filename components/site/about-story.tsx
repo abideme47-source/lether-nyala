@@ -5,13 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { heroImage } from '@/lib/site-images'
-
-type FrameMetrics = {
-  startWidth: number
-  startHeight: number
-  fullWidth: number
-  fullHeight: number
-}
+import { useImagePreload } from '@/lib/use-image-preload'
 
 type ActiveCopy = 'statement' | 'part1' | 'part2' | null
 
@@ -36,21 +30,25 @@ function StatementWord({ word, index, progress, reducedMotion }: {
 
 export function AboutStory() {
   const sectionRef = useRef<HTMLElement>(null)
-  const pinRef = useRef<HTMLDivElement>(null)
+  useImagePreload(sectionRef, heroImage.src)
   const reducedMotion = useReducedMotion() === true
-  const [metrics, setMetrics] = useState<FrameMetrics | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
   const [activeCopy, setActiveCopy] = useState<ActiveCopy>('statement')
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ['start start', 'end end'],
   })
 
-  const photoScaleX = useTransform(scrollYProgress, [0, 0.3], [metrics?.startWidth ? metrics.startWidth / (metrics.fullWidth || 1) : 0.3, 1])
-  const photoScaleY = useTransform(scrollYProgress, [0, 0.3], [metrics?.startHeight ? metrics.startHeight / (metrics.fullHeight || 1) : 0.24, 1])
+  const photoScale = useTransform(
+    scrollYProgress,
+    [0, 0.3],
+    [isMobile ? 0.6 : 0.32, 1],
+    { ease: (progress) => 1 - (1 - progress) ** 3 },
+  )
+  const photoRadius = useTransform(photoScale, (scale) => `${16 / scale}px`)
   const [part2ButtonsVisible, setPart2ButtonsVisible] = useState(false)
-  const imageScale = useTransform(scrollYProgress, [0, 0.25, 0.4], [1.15, 1.05, 1.05])
-  const blurredCopyOpacity = useTransform(scrollYProgress, [0.25, 0.4], [0, 1])
-  const overlayOpacity = useTransform(scrollYProgress, [0, 0.3], [0.12, 0.45])
+  const blurredCopyOpacity = useTransform(scrollYProgress, [0.15, 0.45], [0, 1])
+  const overlayOpacity = useTransform(scrollYProgress, [0.15, 0.45], [0, 0.55])
   const statementOpacity = useTransform(scrollYProgress, [0.3, 0.32, 0.45, 0.55], [0, 1, 1, 0])
   const part1Opacity = useTransform(scrollYProgress, [0.55, 0.58, 0.65, 0.75], [0, 1, 1, 0])
   const part1Y = useTransform(scrollYProgress, [0.55, 0.59], [12, 0])
@@ -60,34 +58,11 @@ export function AboutStory() {
   const part2ButtonsY = useTransform(scrollYProgress, [0.85, 0.93], [12, 0])
 
   useEffect(() => {
-    const updateMetrics = () => {
-      const pin = pinRef.current
-      if (!pin) return
-
-      const width = pin.clientWidth
-      const height = pin.clientHeight
-      const isMobile = window.matchMedia('(max-width: 767px)').matches
-      setMetrics({
-        startWidth: width * (isMobile ? 0.6 : 0.3),
-        startHeight: height * (isMobile ? 0.28 : 0.24),
-        fullWidth: width,
-        fullHeight: height,
-      })
-    }
-
-    updateMetrics()
-    const pin = pinRef.current
-    let observer: ResizeObserver | undefined
-    if (typeof ResizeObserver !== 'undefined' && pin) {
-      observer = new ResizeObserver(updateMetrics)
-      observer.observe(pin)
-    }
-    window.addEventListener('resize', updateMetrics)
-
-    return () => {
-      observer?.disconnect()
-      window.removeEventListener('resize', updateMetrics)
-    }
+    const media = window.matchMedia('(max-width: 767px)')
+    const updateViewport = () => setIsMobile(media.matches)
+    updateViewport()
+    media.addEventListener('change', updateViewport)
+    return () => media.removeEventListener('change', updateViewport)
   }, [])
 
   useMotionValueEvent(scrollYProgress, 'change', (progress) => {
@@ -104,9 +79,7 @@ export function AboutStory() {
     }
   })
 
-  const frameStyle = reducedMotion
-    ? undefined
-    : { scaleX: photoScaleX, scaleY: photoScaleY }
+  const frameStyle = reducedMotion ? { scale: 1, borderRadius: 0 } : { scale: photoScale, borderRadius: photoRadius }
 
   return (
     <section
@@ -114,22 +87,24 @@ export function AboutStory() {
       className={`about-story${reducedMotion ? ' about-story-static' : ''}`}
       ref={sectionRef}
     >
-      <div className="about-story-pin" ref={pinRef}>
+      <div className="about-story-pin">
         <div className="about-photo-layer">
           <motion.div className="about-photo-frame" style={frameStyle}>
-            <motion.div className="about-photo-image" style={reducedMotion ? undefined : { scale: imageScale }}>
-              <Image
-                alt="Leather craftsman hand-stitching a shoe in a workshop"
-                className="about-photo"
-                fill
-                loading="lazy"
-                unoptimized={false}
-                sizes="100vw"
-                src={heroImage.src}
-              />
-            </motion.div>
-            <motion.div aria-hidden="true" className="about-photo-blurred-copy" style={reducedMotion ? undefined : { opacity: blurredCopyOpacity }}>
-              <Image alt="" className="about-photo" fill loading="lazy" sizes="100vw" src={heroImage.src} unoptimized={false} />
+            <Image
+              alt="Leather craftsman hand-stitching a shoe in a workshop"
+              className="about-photo about-photo-sharp"
+              fill
+              loading="lazy"
+              decoding="async"
+              sizes="100vw"
+              src={heroImage.src}
+            />
+            <motion.div
+              aria-hidden="true"
+              className="about-photo-blurred-copy"
+              style={reducedMotion ? undefined : { opacity: blurredCopyOpacity }}
+            >
+              <Image alt="" className="about-photo" fill loading="lazy" decoding="async" sizes="100vw" src={heroImage.src} />
             </motion.div>
             <motion.div
               aria-hidden="true"

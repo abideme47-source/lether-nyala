@@ -1,25 +1,32 @@
 import Image, { type ImageProps } from 'next/image'
+import { unsplashLoader, unsplashUrl } from '@/lib/img'
 
-const urlForWidth = (src: string, width: number) => {
-  const url = new URL(src)
-  url.searchParams.set('auto', 'format')
-  url.searchParams.set('fit', 'crop')
-  url.searchParams.set('q', '70')
-  url.searchParams.set('w', String(width))
-  return url.toString()
-}
+type UnsplashImageProps = Omit<ImageProps, 'src' | 'loader'> & { src: string; maxWidth?: 640 | 800 | 1280 | 1600 }
 
-type UnsplashImageProps = Omit<ImageProps, 'src'> & { src: string }
-
-export function UnsplashImage({ src, sizes = '100vw', ...props }: UnsplashImageProps) {
-  const mobileSource = `${urlForWidth(src, 800)} 800w`
-  const desktopSource = `${urlForWidth(src, 800)} 800w, ${urlForWidth(src, 1600)} 1600w`
+export function UnsplashImage({ src, sizes = '100vw', quality = 60, maxWidth, ...props }: UnsplashImageProps) {
+  const photoId = src.replace(/^https:\/\/images\.unsplash\.com\//, '')
+  const imageQuality = Number(quality)
+  const mobileWidth = maxWidth && maxWidth < 800 ? maxWidth : 800
+  const mobileSource = `${unsplashUrl(photoId, mobileWidth, imageQuality)} ${mobileWidth}w`
+  const desktopWidths = maxWidth && maxWidth <= 640 ? [maxWidth] : [1280, 1600]
+  const desktopSource = desktopWidths.map((width) => `${unsplashUrl(photoId, width, imageQuality)} ${width}w`).join(', ')
+  const blurDataURL = unsplashUrl(photoId, 24, 40)
 
   return (
     <picture>
       <source media="(max-width: 767px)" sizes={sizes} srcSet={mobileSource} />
       <source media="(min-width: 768px)" sizes={sizes} srcSet={desktopSource} />
-      <Image {...props} src={src} sizes={sizes} />
+      <Image
+        {...props}
+        blurDataURL={blurDataURL}
+        decoding="async"
+        loader={unsplashLoader}
+        placeholder="blur"
+        quality={quality}
+        sizes={sizes}
+        src={src}
+        unoptimized
+      />
     </picture>
   )
 }

@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { SiteExperience } from '@/components/site/site-experience'
 import { Anton, Inter, Playfair_Display } from 'next/font/google'
 import type { Metadata, Viewport } from 'next'
+import { unsplashUrl } from '@/lib/img'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-inter', display: 'swap' })
@@ -16,13 +17,13 @@ export const metadata: Metadata = {
     siteName: 'Nyala Shoe & Leather Products Factory',
     title: 'Nyala | Leather Shoes, Boots, Bags & Belts in Addis Ababa',
     description: 'Nyala Shoe & Leather Products Factory in Addis Ababa makes shoes, boots, safety shoes, bags, belts and wallets. Call us to order.',
-    images: [{ url: 'https://images.unsplash.com/photo-1495555961986-6d4c1ecb7be3?auto=format&fit=crop&w=1200&h=630&q=70', width: 1200, height: 630, alt: 'Leather shoes in a Nyala workshop' }],
+    images: [{ url: unsplashUrl('photo-1495555961986-6d4c1ecb7be3', 1200, 60, 630), width: 1200, height: 630, alt: 'Leather shoes in a Nyala workshop' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Nyala | Leather Shoes, Boots, Bags & Belts in Addis Ababa',
     description: 'Nyala Shoe & Leather Products Factory in Addis Ababa makes shoes, boots, safety shoes, bags, belts and wallets. Call us to order.',
-    images: ['https://images.unsplash.com/photo-1495555961986-6d4c1ecb7be3?auto=format&fit=crop&w=1200&h=630&q=70'],
+    images: [unsplashUrl('photo-1495555961986-6d4c1ecb7be3', 1200, 60, 630)],
   },
 }
 
@@ -41,6 +42,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://images.unsplash.com" />
+      </head>
       <body className={`${inter.variable} ${playfair.variable} ${anton.variable} antialiased`}>
         <SiteExperience>{children}</SiteExperience>
         {process.env.NODE_ENV === 'production' && <Analytics />}

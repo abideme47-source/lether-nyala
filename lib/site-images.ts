@@ -1,5 +1,4 @@
-export const unsplashUrl = (photoId: string) =>
-  `https://images.unsplash.com/${photoId}?auto=format&fit=crop&q=70&w=1600`
+import { unsplashUrl } from '@/lib/img'
 
 export const heroImage = { src: '/nyala-workshop.png', alt: '' }
 

@@ -36,7 +36,7 @@ export function Hero() {
 
   return (
     <section className={`hero${introComplete ? ' is-intro-complete' : ''}`} aria-labelledby="hero-title" id="hero">
-      <Image className="hero-image" src={heroImage.src} alt={heroImage.alt} fill priority sizes="100vw" unoptimized={false} />
+      <Image className="hero-image" src={heroImage.src} alt={heroImage.alt} fill priority fetchPriority="high" sizes="100vw" decoding="async" />
       <div className="hero-shade" aria-hidden="true" />
       <div className="hero-content">
         <h1 id="hero-title" aria-label="NYALA SHOE & LEATHER PRODUCTS FACTORY">

@@ -1,3 +1,4 @@
+import { ContactPageContent } from '@/app/contact/contact-page-content'
 import { pageMetadata } from '@/lib/page-metadata'
 
 export const metadata = pageMetadata(
@@ -6,5 +7,5 @@ export const metadata = pageMetadata(
 )
 
 export default function ContactPage() {
-  return <main className="empty-route" aria-label="Contact" />
+  return <ContactPageContent />
 }

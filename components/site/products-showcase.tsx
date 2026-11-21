@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { AnimatePresence, motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform, type MotionValue } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { useLenis } from 'lenis/react'
-import { useRef, useState, type TouchEvent } from 'react'
+import { useEffect, useRef, useState, type TouchEvent } from 'react'
 import { products } from '@/data/products'
 
 type Product = (typeof products)[number]
@@ -33,9 +33,27 @@ function ProductPanel({
   const y = useTransform(progress, [liftStart, segmentEnd], ['0%', '-100%'])
   const photoScaleStart = segmentStart === 0 ? segmentEnd * 0.35 : segmentStart - (1 / products.length) * 0.35
   const photoScale = useTransform(progress, [photoScaleStart, segmentStart === 0 ? photoScaleStart + 0.01 : segmentStart], [1.08, 1])
-  const titleY = useTransform(progress, [segmentStart + 0.1 / products.length, segmentStart + 0.4 / products.length], [0, -26])
-  const descriptionOpacity = useTransform(progress, [segmentStart + 0.1 / products.length, segmentStart + 0.4 / products.length], [0, 1])
-  const descriptionY = useTransform(progress, [segmentStart + 0.1 / products.length, segmentStart + 0.4 / products.length], [12, 0])
+  const panelProgress = useTransform(
+    progress,
+    index === products.length - 1 ? [segmentStart, 1] : [0, 1],
+    index === products.length - 1 ? [segmentStart, segmentStart + 0.6 / products.length] : [0, 1],
+  )
+  const descriptionOpacity = useTransform(panelProgress, [segmentStart + 0.1 / products.length, segmentStart + 0.4 / products.length], [0, 1])
+  const descriptionRef = useRef<HTMLParagraphElement>(null)
+  const [descriptionHeight, setDescriptionHeight] = useState(0)
+  const copyY = useTransform(panelProgress, [segmentStart + 0.1 / products.length, segmentStart + 0.4 / products.length], [descriptionHeight, 0])
+
+  useEffect(() => {
+    const element = descriptionRef.current
+    if (!element) return
+    const observer = new ResizeObserver(() => {
+      const style = window.getComputedStyle(element)
+      const margins = Number.parseFloat(style.marginTop) + Number.parseFloat(style.marginBottom)
+      setDescriptionHeight(element.getBoundingClientRect().height + margins)
+    })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <motion.article
@@ -60,7 +78,9 @@ function ProductPanel({
                 alt={product.images[photoIndex].alt}
                 className="products-panel-image"
                 fill
-                loading={index < 2 ? 'eager' : 'lazy'}
+                priority={isActive}
+                loading={isActive ? 'eager' : 'lazy'}
+                decoding="async"
                 sizes="100vw"
                 src={product.images[photoIndex].src}
               />
@@ -70,26 +90,54 @@ function ProductPanel({
       </div>
       <div aria-hidden="true" className="products-panel-shade" />
       <div className="products-photo-gradient" />
-      <div className="products-panel-copy">
-        <span className="products-tag">{product.tag}</span>
-        <motion.h2 style={reducedMotion ? undefined : { y: titleY }}>{product.name}</motion.h2>
-        <motion.p style={reducedMotion ? undefined : { opacity: descriptionOpacity, y: descriptionY }}>{product.line}</motion.p>
-      </div>
+      <motion.div className="products-panel-copy" style={reducedMotion ? undefined : { y: copyY }}>
+        <motion.h2>{product.name}</motion.h2>
+        <motion.p ref={descriptionRef} style={reducedMotion ? undefined : { opacity: descriptionOpacity }}>{product.line}</motion.p>
+      </motion.div>
     </motion.article>
   )
 }
 
-export function ProductsShowcase() {
+export function ProductsShowcase({ initialIndex = 0, onJumpComplete }: { initialIndex?: number; onJumpComplete?: () => void }) {
   const sectionRef = useRef<HTMLElement>(null)
-  const activeRef = useRef(0)
+  const activeRef = useRef(initialIndex)
+  const preloadedUpcoming = useRef(new Set<string>())
   const touchStartX = useRef<number | null>(null)
   const pressedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [activeIndex, setActiveIndex] = useState(0)
+  const [activeIndex, setActiveIndex] = useState(initialIndex)
   const [photoIndexes, setPhotoIndexes] = useState<number[]>(products.map(() => 0))
   const [pressed, setPressed] = useState(false)
   const reducedMotion = useReducedMotion() === true
   const lenis = useLenis()
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end end'] })
+
+  useEffect(() => {
+    for (const image of products[activeIndex].images.slice(1)) {
+      const preload = new window.Image()
+      preload.src = image.src
+    }
+  }, [activeIndex])
+
+  useEffect(() => {
+    if (!onJumpComplete) return
+    if (!lenis && !reducedMotion) return
+    let secondFrame = 0
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        const section = sectionRef.current
+        if (!section) return
+        const progress = (initialIndex + 0.12) / products.length
+        const target = section.getBoundingClientRect().top + window.scrollY + progress * (section.offsetHeight - window.innerHeight)
+        if (lenis) lenis.scrollTo(target, { immediate: true })
+        else window.scrollTo({ top: target, behavior: 'instant' })
+        onJumpComplete()
+      })
+    })
+    return () => {
+      window.cancelAnimationFrame(firstFrame)
+      if (secondFrame) window.cancelAnimationFrame(secondFrame)
+    }
+  }, [initialIndex, lenis, onJumpComplete, reducedMotion])
 
   useMotionValueEvent(scrollYProgress, 'change', (progress) => {
     if (reducedMotion) return
@@ -97,6 +145,15 @@ export function ProductsShowcase() {
     if (nextIndex !== activeRef.current) {
       activeRef.current = nextIndex
       setActiveIndex(nextIndex)
+    }
+
+    const activeProgress = progress * products.length - activeRef.current
+    const upcoming = products[activeRef.current + 1]
+    const upcomingImage = upcoming?.images[0]
+    if (activeProgress >= 0.4 && upcomingImage && !preloadedUpcoming.current.has(upcomingImage.src)) {
+      preloadedUpcoming.current.add(upcomingImage.src)
+      const preload = new window.Image()
+      preload.src = upcomingImage.src
     }
   })
 
@@ -188,9 +245,9 @@ export function ProductsShowcase() {
         <section className="products-reduced-list" aria-label="All products">
           {products.map((product) => (
             <article className="products-reduced-card" key={product.name}>
-              <Image alt={product.images[0].alt} fill sizes="100vw" src={product.images[0].src} />
+              <Image alt={product.images[0].alt} fill loading="lazy" decoding="async" sizes="100vw" src={product.images[0].src} />
               <div className="products-reduced-copy">
-                <span className="products-tag">{product.tag}</span>
+
                 <h2>{product.name}</h2>
                 <p>{product.line}</p>
               </div>
@@ -218,7 +275,6 @@ export function ProductsContact() {
         >
           Contact Us
         </motion.a>
-        <a className="products-contact-phone" href="tel:+251911606155">Call now: +251911606155</a>
       </div>
     </section>
   )

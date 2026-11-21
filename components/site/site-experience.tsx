@@ -11,7 +11,7 @@ const brandLetters = ['N', 'Y', 'A', 'L', 'A']
 
 export function SiteExperience({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  const skipIntro = pathname === '/about' || pathname === '/products'
+  const skipIntro = pathname === '/about' || pathname === '/products' || pathname === '/contact'
   const [reduceMotion, setReduceMotion] = useState(false)
   const [showIntro, setShowIntro] = useState(!skipIntro)
   const [introActive, setIntroActive] = useState(!skipIntro)
@@ -69,7 +69,7 @@ export function SiteExperience({ children }: { children: ReactNode }) {
   return (
     <>
       {content}
-      {(pathname === '/' || pathname === '/about' || pathname === '/products') && <TopScrollProgress hidden={introActive} />}
+      {(pathname === '/' || pathname === '/about' || pathname === '/products' || pathname === '/contact') && <TopScrollProgress hidden={introActive} />}
       {!skipIntro && (
           <AnimatePresence onExitComplete={() => {
             document.body.style.overflow = ''

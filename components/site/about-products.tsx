@@ -3,13 +3,17 @@
 import Image from 'next/image'
 import { motion, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
+import { useRef } from 'react'
 import { products } from '@/data/products'
+import { useImagePreload } from '@/lib/use-image-preload'
 
 export function AboutProducts() {
+  const sectionRef = useRef<HTMLElement>(null)
+  useImagePreload(sectionRef, products[0].images[0].src)
   const reducedMotion = useReducedMotion() === true
 
   return (
-    <section aria-labelledby="about-products-title" className="about-products">
+    <section aria-labelledby="about-products-title" className="about-products" ref={sectionRef}>
       <div className="about-products-inner">
         <h2 id="about-products-title">What we make</h2>
         <div className="about-products-grid">
@@ -28,6 +32,7 @@ export function AboutProducts() {
                   className="about-product-image"
                   fill
                   loading="lazy"
+                  decoding="async"
                   sizes="(max-width: 767px) 50vw, 34vw"
                   src={images[0].src}
                 />

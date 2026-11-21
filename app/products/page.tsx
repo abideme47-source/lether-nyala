@@ -1,7 +1,5 @@
-import { AboutNavigation } from '@/components/site/about-navigation'
-import { Footer } from '@/components/site/footer'
-import { MobileCallBar } from '@/components/site/mobile-call-bar'
-import { ProductsContact, ProductsShowcase } from '@/components/site/products-showcase'
+import { Suspense } from 'react'
+import { ProductsPageContent } from '@/components/site/products-page-content'
 import { pageMetadata } from '@/lib/page-metadata'
 
 export const metadata = pageMetadata(
@@ -11,15 +9,8 @@ export const metadata = pageMetadata(
 
 export default function ProductsPage() {
   return (
-    <div className="products-page">
-      <AboutNavigation />
-      <main className="products-main">
-        <ProductsShowcase />
-        <ProductsContact />
-      </main>
-      <MobileCallBar />
-      <Footer />
-      <div aria-hidden="true" className="footer-reveal-spacer" />
-    </div>
+    <Suspense fallback={<div aria-hidden="true" className="products-page" style={{ minHeight: '100dvh' }} />}>
+      <ProductsPageContent />
+    </Suspense>
   )
 }

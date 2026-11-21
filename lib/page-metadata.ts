@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
+import { unsplashUrl } from '@/lib/img'
 
-const shareImage = 'https://images.unsplash.com/photo-1495555961986-6d4c1ecb7be3?auto=format&fit=crop&w=1200&h=630&q=70'
+const shareImage = unsplashUrl('photo-1495555961986-6d4c1ecb7be3', 1200, 60, 630)
 
 export function pageMetadata(title: string, description: string): Metadata {
   return {
